@@ -1,1 +1,101 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Staking DApp Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <h2 class="mb-4 text-center">Staking DApp Frontend Demo</h2>
+    <div id="wallet-section" class="mb-4 text-center">
+      <button id="connectButton" class="btn btn-primary">Connect Wallet</button>
+      <div id="walletAddress" class="mt-2"></div>
+    </div>
+    <div id="main-actions" style="display:none;">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Stake Tokens</h5>
+          <input type="number" id="stakeAmount" class="form-control mb-2" placeholder="Amount to Stake">
+          <button id="stakeButton" class="btn btn-success">Stake</button>
+        </div>
+      </div>
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Claim Rewards</h5>
+          <button id="claimButton" class="btn btn-warning">Claim</button>
+        </div>
+      </div>
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Unstake Tokens</h5>
+          <button id="unstakeButton" class="btn btn-danger">Unstake</button>
+        </div>
+      </div>
+      <div id="status" class="text-info mt-2"></div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.1/dist/web3.min.js"></script>
+  <script>
+    // === CHANGE THIS: Paste your contract address and ABI below ===
+    const contractAddress = "0x4f35d977E8afeB4A18812Bb167eFCF3aA6C08Fe6"; // Example: "0x1234abc..."
+    const contractABI = [ [{"inputs":[{"internalType":"address","name":"_token","type":"address"},{"internalType":"address","name":"_adminWallet","type":"address"},{"internalType":"address","name":"_defaultReferrer","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint8","name":"tierId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"HighTierClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"HighestPoolClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"oldOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint8","name":"blockId","type":"uint8"}],"name":"RankBlockEntered","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint8","name":"blockId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"RankPoolClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"referrer","type":"address"},{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ReferralReward","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"RoiClaimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Staked","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Withdrawn","type":"event"},{"inputs":[],"name":"HIGHEST_POOL_PCT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"HIGH_TIER_POOL_PCT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_LEVEL","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MIN_STAKE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"RANK_POOL_PCT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"ROI_RATE_PER_SEC","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"adminFeePercent","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"adminWallet","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"tierId","type":"uint8"}],"name":"claimHighStakerPool","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"claimHighestStakerPool","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint8","name":"blockId","type":"uint8"}],"name":"claimRankPool","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"claimRoi","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"defaultReferrer","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"blockId","type":"uint8"}],"name":"enterRankBlock","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"highestCarry","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"levelPercent","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"minDirectReferrals","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"contract IERC20","name":"_token","type":"address"},{"internalType":"uint256","name":"amt","type":"uint256"},{"internalType":"address","name":"to","type":"address"}],"name":"ownerWithdrawERC20","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"userAddr","type":"address"}],"name":"pendingRoi","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"rankBlockBP","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"","type":"uint8"}],"name":"rankCarry","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"rankTotalBP","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"","type":"uint8"}],"name":"rankUserCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"","type":"uint8"},{"internalType":"address","name":"","type":"address"}],"name":"rankUsers","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"w","type":"address"}],"name":"setAdminWallet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"r","type":"address"}],"name":"setDefaultReferrer","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"address","name":"ref","type":"address"}],"name":"stake","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"stakeWithDefault","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"tiers","outputs":[{"internalType":"uint256","name":"minStake","type":"uint256"},{"internalType":"uint256","name":"percentBP","type":"uint256"},{"internalType":"uint256","name":"carry","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"token","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"topStakers","outputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"userCurrentBlock","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"staked","type":"uint256"},{"internalType":"uint256","name":"roiEarned","type":"uint256"},{"internalType":"uint256","name":"totalEarned","type":"uint256"},{"internalType":"uint256","name":"lastStakeTime","type":"uint256"},{"internalType":"uint256","name":"lastClaimTime","type":"uint256"},{"internalType":"bool","name":"roiActive","type":"bool"},{"internalType":"bool","name":"poolCBlocked","type":"bool"},{"internalType":"bool","name":"oneGoQualified","type":"bool"},{"internalType":"address","name":"referrer","type":"address"},{"internalType":"uint256","name":"directReferralCount","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}]];
+
+    let web3;
+    let contract;
+    let accounts;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('connectButton').onclick = async () => {
+        if (window.ethereum) {
+          web3 = new Web3(window.ethereum);
+          try {
+            accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            document.getElementById('walletAddress').innerText = 'Wallet: ' + accounts[0];
+            contract = new web3.eth.Contract(contractABI, contractAddress);
+            document.getElementById('main-actions').style.display = '';
+
+          } catch (error) {
+            alert('Connection failed.');
+          }
+        } else {
+          alert('Please install MetaMask.');
+        }
+      };
+
+      document.getElementById('stakeButton').onclick = async () => {
+        const amount = document.getElementById('stakeAmount').value;
+        document.getElementById('status').innerText = 'Sending stake transaction...';
+        try {
+          await contract.methods.stake(amount).send({ from: accounts[0] });
+          document.getElementById('status').innerText = 'Stake successful!';
+        } catch (error) {
+          document.getElementById('status').innerText = 'Stake failed: ' + error.message;
+        }
+      };
+
+      document.getElementById('claimButton').onclick = async () => {
+        document.getElementById('status').innerText = 'Claiming rewards...';
+        try {
+          await contract.methods.claim().send({ from: accounts[0] });
+          document.getElementById('status').innerText = 'Claim successful!';
+        } catch (error) {
+          document.getElementById('status').innerText = 'Claim failed: ' + error.message;
+        }
+      };
+
+      document.getElementById('unstakeButton').onclick = async () => {
+        document.getElementById('status').innerText = 'Unstaking...';
+        try {
+          await contract.methods.unstake().send({ from: accounts[0] });
+          document.getElementById('status').innerText = 'Unstake successful!';
+        } catch (error) {
+          document.getElementById('status').innerText = 'Unstake failed: ' + error.message;
+        }
+      };
+    });
+  </script>
+</body>
+</html>
